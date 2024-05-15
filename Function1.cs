@@ -1,12 +1,10 @@
-using Microsoft.AspNetCore.Http;
+using Azure.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Cosmos;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System.Net;
-using System.Text;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Microsoft.Azure.Functions.Worker;
 
 namespace FunctionApp1
 {
@@ -29,12 +27,29 @@ namespace FunctionApp1
         }
 
         [Function("HttpExample")]
-        public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req,
-            [CosmosDBInput(databaseName: "my-database", containerName: "my-container", Connection  = "CosmosDbConnectionSetting", SqlQuery = "SELECT * from c")] IEnumerable<CosmosDocument> items)
+        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
         {
+            _logger.LogTrace("Start function");            
+            CosmosClient client = new CosmosClient(
+                accountEndpoint: Environment.GetEnvironmentVariable("CosmosDbConnectionSetting", EnvironmentVariableTarget.Process),
+                new DefaultAzureCredential()
+            );
+
+            using FeedIterator<DatabaseProperties> iterator = client.GetDatabaseQueryIterator<DatabaseProperties>();
+
+            List<(string name, string uri)> databases = new();
+            while (iterator.HasMoreResults)
+            {
+                foreach (DatabaseProperties database in await iterator.ReadNextAsync())
+                {
+                    _logger.LogTrace($"[Database Found]\t{database.Id}");
+                    databases.Add((database.Id, database.SelfLink));
+                }
+            }
+
             _logger.LogInformation("C# HTTP trigger function processed a request.");                        
 
-            var myObj = new { text = items.First().Msg };            
+            var myObj = new { text = "Test1" };            
 
             return new JsonResult(myObj);            
         }
