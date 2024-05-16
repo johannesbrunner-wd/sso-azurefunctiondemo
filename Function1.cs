@@ -25,7 +25,8 @@ namespace FunctionApp1
         {
             _logger = logger;
         }
-
+        //https://learn.microsoft.com/en-us/azure/cosmos-db/managed-identity-based-authentication
+        //https://learn.microsoft.com/de-de/azure/cosmos-db/mongodb/how-to-setup-rbac
         [Function("HttpExample")]
         public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
         {
@@ -46,6 +47,26 @@ namespace FunctionApp1
                     databases.Add((database.Id, database.SelfLink));
                 }
             }
+
+            // Get a reference to the database and container
+            Database database1 = client.GetDatabase("my-database");
+            Container container = database1.GetContainer("my-container");
+
+            // Define the query
+            var queryDefinition = new QueryDefinition("SELECT * FROM c");
+
+            // Execute the query
+            using (var iterator2 = container.GetItemQueryIterator<CosmosDocument>(queryDefinition))
+            {
+                while (iterator2.HasMoreResults)
+                {
+                    var response = await iterator2.ReadNextAsync();
+                    foreach (var item in response)
+                    {
+                        Console.WriteLine($"Item ID: {item.Id}, Name: {item.Msg}");
+                    }
+                }
+            }            
 
             _logger.LogInformation("C# HTTP trigger function processed a request.");                        
 
