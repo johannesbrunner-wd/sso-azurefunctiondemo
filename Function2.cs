@@ -19,25 +19,16 @@ namespace FunctionApp1
         //https://learn.microsoft.com/en-us/azure/cosmos-db/managed-identity-based-authentication
         //https://learn.microsoft.com/de-de/azure/cosmos-db/mongodb/how-to-setup-rbac
         [Function("HttpExample1")]
-        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req, HttpResponse res)
+        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function to delete all cookies.");
+            
+            // A little non logical way to actually get the HttpResponse (from the HttpRequest and its HttpContext)
+            req.HttpContext.Response.Cookies.Delete("AppServiceAuthSession");
+            req.HttpContext.Response.Cookies.Delete("AppServiceAuthSession1");
+            req.HttpContext.Response.Cookies.Delete("StaticWebAppsAuthCookie");
 
-            // Get all cookies from the request
-            var cookies = req.Cookies;
-
-            // Prepare a list to hold Set-Cookie headers for the response
-            foreach (var cookie in cookies)
-            {
-                var cookieOptions = new CookieOptions
-                {
-                    Expires = System.DateTimeOffset.UnixEpoch,
-                    Path = "/"
-                };
-                res.Cookies.Append(cookie.Key, "", cookieOptions);
-            }
-
-            return new OkObjectResult("All cookies deleted.");
+            return new OkObjectResult("Cookie set");
         }
     }
 }
