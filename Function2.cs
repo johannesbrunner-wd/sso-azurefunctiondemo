@@ -24,9 +24,42 @@ namespace FunctionApp1
             _logger.LogInformation("C# HTTP trigger function to delete all cookies.");
             
             // A little non logical way to actually get the HttpResponse (from the HttpRequest and its HttpContext)
-            req.HttpContext.Response.Cookies.Delete("AppServiceAuthSession");
-            req.HttpContext.Response.Cookies.Delete("AppServiceAuthSession1");
-            req.HttpContext.Response.Cookies.Delete("StaticWebAppsAuthCookie");
+            req.HttpContext.Response.Cookies.Delete("AppServiceAuthSession", new CookieOptions
+            {
+                Domain = "gray-river-0d65c6203.5.azurestaticapps.net",
+                Path = "/",
+                Expires = DateTime.UnixEpoch,
+                HttpOnly = true, 
+                Secure = true,
+                SameSite = SameSiteMode.None               
+            });
+            req.HttpContext.Response.Cookies.Delete("AppServiceAuthSession1", new CookieOptions
+            {
+                Domain = "",
+                Path = "/",
+                Expires = DateTime.UnixEpoch,
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+            req.HttpContext.Response.Cookies.Delete("StaticWebAppsAuthCookie", new CookieOptions
+            {
+                Domain = "",
+                Path = "/",
+                Expires = DateTime.UnixEpoch,
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+
+            req.HttpContext.Response.Cookies.Append("JbrCookie", DateTime.UtcNow.ToShortTimeString(), new CookieOptions
+            {                
+                Path = "/",
+                Expires = DateTime.Now.AddDays(1),
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
 
             return new OkObjectResult("Cookie set");
         }
